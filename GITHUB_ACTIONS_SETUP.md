@@ -45,13 +45,20 @@ jobs:
         aws-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         aws-region: auto
         
+    - name: Set up AWS CLI for R2
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        aws configure set region auto
+        aws configure set output json
+        
     - name: Terraform Init
       run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
         terraform init \
           -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
           -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
-          -backend-config="access_key=${{ secrets.R2_ACCESS_KEY_ID }}" \
-          -backend-config="secret_key=${{ secrets.R2_SECRET_ACCESS_KEY }}" \
           -backend-config="region=auto" \
           -backend-config="skip_credentials_validation=true" \
           -backend-config="skip_region_validation=true" \
@@ -61,21 +68,29 @@ jobs:
     - name: Terraform Validate
       run: terraform validate
       
+    - name: Terraform Validate
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        terraform validate
+      
     - name: Terraform Plan
-      run: terraform plan
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        terraform plan
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        TF_VAR_r2_access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
-        TF_VAR_r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: terraform apply -auto-approve
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        terraform apply -auto-approve
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        TF_VAR_r2_access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
-        TF_VAR_r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         TIMEWEB_TOKEN: ${{ secrets.TIMEWEB_TOKEN }}
 ```
