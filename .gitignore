@@ -2,3 +2,4 @@ token.txt
 .history
 cloudflare.auto.tfvars
 terraform.tfstate
+r2-backend.conf
