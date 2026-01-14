@@ -83,16 +83,13 @@ echo "cloudflare.auto.tfvars" >> .gitignore
 
 ```bash
 # Учетные данные R2
-endpoint = "https://<account_id>.r2.cloudflarestorage.com"
-access_key = "<r2_access_key_id>"
-secret_key = "<r2_secret_access_key>"
 bucket = "terraform-state"
 key = "kubernetes/terraform.tfstate"
-region = "auto"
+endpoints.s3 = "https://<account_id>.r2.cloudflarestorage.com"
 skip_credentials_validation = true
 skip_region_validation      = true
 skip_metadata_api_check     = true
-use_path_style              = true
+force_path_style            = true
 ```
 
 ### 5. Настройка безопасности учетных данных в GitHub
@@ -133,6 +130,12 @@ variable "domain_name" {
 Перед первой инициализацией убедитесь, что у вас есть учетные данные R2:
 
 ```bash
+# Установите переменные окружения
+export AWS_ACCESS_KEY_ID="ваш_r2_access_key_id"
+export AWS_SECRET_ACCESS_KEY="ваш_r2_secret_access_key"
+export AWS_DEFAULT_REGION="auto"
+
+# Инициализируйте Terraform с конфигурацией R2 бэкенда
 terraform init -backend-config=r2-backend.conf
 ```
 
@@ -391,6 +394,15 @@ terraform {
 3. Верните конфигурацию R2 в `backend.tf`
 
 4. Снова выполните `terraform init` и подтвердите миграцию состояния
+
+### Использование файла конфигурации бэкенда
+
+Для локального тестирования можно использовать файл `r2-backend.conf` с командой:
+```bash
+terraform init -backend-config=r2-backend.conf
+```
+
+Убедитесь, что перед запуском команды заданы переменные окружения AWS_ACCESS_KEY_ID и AWS_SECRET_ACCESS_KEY с вашими учетными данными R2.
 
 ### Синхронизация состояния
 

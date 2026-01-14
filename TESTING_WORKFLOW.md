@@ -79,13 +79,13 @@ export TIMEWEB_TOKEN="$(cat token.txt)"
 3. Выполните инициализацию Terraform с конфигурацией R2 бэкенда:
 ```bash
 terraform init \
-  -backend-config="endpoint=https://ваш_account_id.r2.cloudflarestorage.com" \
   -backend-config="bucket=terraform-state" \
-  -backend-config="region=auto" \
+  -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+  -backend-config="endpoints.s3=https://ваш_account_id.r2.cloudflarestorage.com" \
   -backend-config="skip_credentials_validation=true" \
   -backend-config="skip_region_validation=true" \
   -backend-config="skip_metadata_api_check=true" \
-  -backend-config="use_path_style=true"
+  -backend-config="force_path_style=true"
 ```
 
 4. Проверьте конфигурацию:
