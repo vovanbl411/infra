@@ -116,3 +116,26 @@ variable "cloudflare_account_id" {
   type        = string
   default     = ""
 }
+
+# Переменные для провайдеров (добавляем недостающие)
+variable "timeweb_token" {
+  description = "Timeweb Cloud API Token"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# Эта переменная уже есть, но если используется для Cloudflare provider, оставляем
+variable "cloudflare_api_token" {
+  description = "Cloudflare API Token"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare Account ID"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

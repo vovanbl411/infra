@@ -13,8 +13,14 @@ terraform {
 
 # Provider для Timeweb Cloud
 provider "twc" {
-  token = file("token.txt")
+  token = var.timeweb_token
 }
+
+# Provider для Cloudflare
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
 
 data "twc_configurator" "configurator" {
   location    = "ru-1"
