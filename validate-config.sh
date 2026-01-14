@@ -23,6 +23,8 @@ fi
 
 # Инициализируем Terraform (без бэкенда для проверки)
 echo "🔍 Инициализация провайдеров..."
+export AWS_DEFAULT_REGION="auto"
+export AWS_ENDPOINT_URL_S3="https://example.r2.cloudflarestorage.com"
 terraform init -backend=false -get-plugins=true
 if [ $? -ne 0 ]; then
     echo "❌ Ошибка инициализации провайдеров"

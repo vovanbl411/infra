@@ -85,7 +85,6 @@ echo "cloudflare.auto.tfvars" >> .gitignore
 # Учетные данные R2
 bucket = "terraform-state"
 key = "kubernetes/terraform.tfstate"
-endpoints.s3 = "https://<account_id>.r2.cloudflarestorage.com"
 skip_credentials_validation = true
 skip_region_validation      = true
 skip_metadata_api_check     = true
@@ -134,6 +133,7 @@ variable "domain_name" {
 export AWS_ACCESS_KEY_ID="ваш_r2_access_key_id"
 export AWS_SECRET_ACCESS_KEY="ваш_r2_secret_access_key"
 export AWS_DEFAULT_REGION="auto"
+export AWS_ENDPOINT_URL_S3="https://ваш_account_id.r2.cloudflarestorage.com"
 
 # Инициализируйте Terraform с конфигурацией R2 бэкенда
 terraform init -backend-config=r2-backend.conf

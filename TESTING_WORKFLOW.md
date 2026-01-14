@@ -78,10 +78,15 @@ export TIMEWEB_TOKEN="$(cat token.txt)"
 
 3. Выполните инициализацию Terraform с конфигурацией R2 бэкенда:
 ```bash
+# Установите переменные окружения
+export AWS_ACCESS_KEY_ID="ваш_r2_access_key_id"
+export AWS_SECRET_ACCESS_KEY="ваш_r2_secret_access_key"
+export AWS_DEFAULT_REGION="auto"
+export AWS_ENDPOINT_URL_S3="https://ваш_account_id.r2.cloudflarestorage.com"
+
 terraform init \
   -backend-config="bucket=terraform-state" \
   -backend-config="key=kubernetes-cluster/terraform.tfstate" \
-  -backend-config="endpoints.s3=https://ваш_account_id.r2.cloudflarestorage.com" \
   -backend-config="skip_credentials_validation=true" \
   -backend-config="skip_region_validation=true" \
   -backend-config="skip_metadata_api_check=true" \
