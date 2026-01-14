@@ -78,15 +78,10 @@ export TIMEWEB_TOKEN="$(cat token.txt)"
 
 3. Выполните инициализацию Terraform с конфигурацией R2 бэкенда:
 ```bash
-# Установите переменные окружения
-export AWS_ACCESS_KEY_ID="ваш_r2_access_key_id"
-export AWS_SECRET_ACCESS_KEY="ваш_r2_secret_access_key"
-export AWS_DEFAULT_REGION="auto"
-export AWS_ENDPOINT_URL_S3="https://ваш_account_id.r2.cloudflarestorage.com"
-
 terraform init \
+  -backend-config="endpoint=https://ваш_account_id.r2.cloudflarestorage.com" \
   -backend-config="bucket=terraform-state" \
-  -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+  -backend-config="region=auto" \
   -backend-config="skip_credentials_validation=true" \
   -backend-config="skip_region_validation=true" \
   -backend-config="skip_metadata_api_check=true" \
@@ -124,53 +119,3 @@ yamllint .github/workflows/terraform.yml
 ```bash
 terraform validate
 terraform fmt -check
-```
-
-## Использование скрипта validate-config.sh
-
-Для удобной проверки конфигурации перед коммитом вы можете использовать предоставленный скрипт:
-
-```bash
-./validate-config.sh
-```
-
-Этот скрипт выполнит следующие проверки:
-- Проверит, установлен ли Terraform
-- Проверит синтаксис HCL файлов
-- Инициализирует провайдеров
-- Проверит конфигурацию
-- Проверит синтаксис YAML файлов (если установлен yamllint)
-
-## Тестирование с разными событиями GitHub
-
-Вы можете эмулировать различные события GitHub при тестировании:
-
-- `act push` - эмуляция пуше в ветку
-- `act pull_request` - эмуляция pull request
-- `act release` - эмуляция релиза
-
-Для получения списка доступных событий выполните:
-```bash
-act -l
-```
-
-## Настройка act для специфичного поведения
-
-Вы можете настроить act с помощью файла `.actrc` в корне проекта или в домашней директории:
-
-```
--P ubuntu-latest=node:16-bullseye
--P ubuntu-20.04=node:16-bullseye
--P ubuntu-18.04=node:16-buster
-```
-
-## Отладка workflow
-
-Для более подробного вывода при тестировании используйте флаг `-v`:
-```bash
-act -v
-```
-
-Для отладки конкретного шага workflow можно использовать флаг `-j` для запуска только определенного job:
-```bash
-act -j terraform

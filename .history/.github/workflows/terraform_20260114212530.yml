@@ -1,0 +1,67 @@
+name: Terraform Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.12.1
+        
+    - name: Set up AWS CLI for R2
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        aws configure set region auto
+        aws configure set output json
+        
+    - name: Terraform Init
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        export AWS_DEFAULT_REGION="auto"
+        terraform init \
+          -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
+          -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+          -backend-config="endpoints.s3=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+          -backend-config="skip_credentials_validation=true" \
+          -backend-config="skip_region_validation=true" \
+          -backend-config="skip_metadata_api_check=true" \
+          -backend-config="force_path_style=true"
+      
+    - name: Terraform Validate
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        export AWS_DEFAULT_REGION="auto"
+        terraform validate
+      
+    - name: Terraform Plan
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        export AWS_DEFAULT_REGION="auto"
+        terraform plan
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+        export AWS_DEFAULT_REGION="auto"
+        terraform apply -auto-approve
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        TIMEWEB_TOKEN: ${{ secrets.TIMEWEB_TOKEN }}
