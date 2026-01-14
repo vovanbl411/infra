@@ -1,7 +1,7 @@
 variable "domain_name" {
   description = "Your domain name for DNS records"
   type        = string
-  default     = "vovanbl411.qzz.io"  # Замените на ваш домен
+  default     = "vovanbl411.qzz.io" # Замените на ваш домен
 }
 
 variable "cluster_name" {
@@ -41,7 +41,7 @@ variable "master_disk" {
 }
 
 variable "worker_cpu" {
- description = "CPU count for worker nodes (не используется для k8s пресетов)"
+  description = "CPU count for worker nodes (не используется для k8s пресетов)"
   type        = number
   default     = 1
 }

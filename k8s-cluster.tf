@@ -12,15 +12,15 @@ data "twc_k8s_preset" "master_preset" {
 }
 
 resource "twc_k8s_cluster" "k8s_cluster" {
-  name = var.cluster_name
+  name        = var.cluster_name
   description = "Kubernetes cluster with 1 master and ${var.worker_count} workers"
 
   high_availability = false
-  version          = var.k8s_version
-  network_driver   = "flannel"
-  ingress          = true
+  version           = var.k8s_version
+  network_driver    = "flannel"
+  ingress           = true
 
-  preset_id = data.twc_k8s_preset.master_preset.id
+  preset_id  = data.twc_k8s_preset.master_preset.id
   network_id = twc_vpc.k8s_vpc.id
 }
 
@@ -85,8 +85,8 @@ output "cluster_status" {
 }
 
 output "kubeconfig" {
-  value     = twc_k8s_cluster.k8s_cluster.kubeconfig
-  sensitive = true
+  value       = twc_k8s_cluster.k8s_cluster.kubeconfig
+  sensitive   = true
   description = "Kubeconfig for the cluster"
 }
 
