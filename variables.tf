@@ -89,3 +89,30 @@ variable "cloudflare_email" {
   type        = string
   default     = ""
 }
+
+# Переменные для R2 (для хранения состояния Terraform)
+variable "r2_access_key_id" {
+  description = "R2 Access Key ID для хранения tfstate"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "r2_secret_access_key" {
+  description = "R2 Secret Access Key для хранения tfstate"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "r2_bucket" {
+  description = "R2 Bucket для хранения tfstate"
+  type        = string
+  default     = "terraform-state"
+}
+
+variable "cloudflare_account_id" {
+  description = "CloudFlare Account ID для доступа к R2"
+  type        = string
+  default     = ""
+}

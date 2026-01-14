@@ -87,8 +87,12 @@ endpoint = "https://<account_id>.r2.cloudflarestorage.com"
 access_key = "<r2_access_key_id>"
 secret_key = "<r2_secret_access_key>"
 bucket = "terraform-state"
-key = "kubernetes-cluster/terraform.tfstate"
+key = "kubernetes/terraform.tfstate"
 region = "auto"
+skip_credentials_validation = true
+skip_region_validation      = true
+skip_metadata_api_check     = true
+use_path_style              = true
 ```
 
 ### 5. Настройка безопасности учетных данных в GitHub
@@ -102,6 +106,9 @@ region = "auto"
    - `R2_ACCESS_KEY_ID`: ваш R2 Access Key ID
    - `R2_SECRET_ACCESS_KEY`: ваш R2 Secret Access Key
    - `TIMEWEB_TOKEN`: ваш Timeweb Cloud API токен
+
+3. При необходимости добавьте переменные (Variables):
+   - `R2_BUCKET`: имя R2 bucket для хранения состояния (по умолчанию: terraform-state)
 
 ### 6. Настройте переменные в `variables.tf`
 
@@ -366,6 +373,25 @@ terraform destroy
 
 ## Работа с R2 бэкендом
 
+### Миграция с локального бэкенда
+
+Если у вас уже есть локальный tfstate файл, и вы хотите перенести его в R2, выполните следующие шаги:
+
+1. Временно измените конфигурацию бэкенда в `backend.tf` на локальную:
+```hcl
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+}
+```
+
+2. Выполните `terraform init` для загрузки локального состояния
+
+3. Верните конфигурацию R2 в `backend.tf`
+
+4. Снова выполните `terraform init` и подтвердите миграцию состояния
+
 ### Синхронизация состояния
 
 Если вы работаете в команде, всегда синхронизируйте состояние перед применением изменений:
@@ -384,49 +410,8 @@ terraform state pull > terraform.tfstate.backup
 
 ## CI/CD Интеграция с GitHub Actions
 
-Для автоматизации развертывания через GitHub Actions создайте файл `.github/workflows/terraform.yml`:
+Файл `.github/workflows/terraform.yml` уже создан в репозитории и содержит конфигурацию для автоматизации развертывания через GitHub Actions:
 
-```yaml
-name: Terraform Deploy
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.12.1
-        
-    - name: Configure AWS credentials for R2
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        aws-region: auto
-        
-    - name: Terraform Init
-      run: terraform init -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" -backend-config="bucket=terraform-state" -backend-config="access_key=${{ secrets.R2_ACCESS_KEY_ID }}" -backend-config="secret_key=${{ secrets.R2_SECRET_ACCESS_KEY }}" -backend-config="region=auto"
-      
-    - name: Terraform Plan
-      run: terraform plan
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/main'
-      run: terraform apply -auto-approve
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        TIMEWEB_TOKEN: ${{ secrets.TIMEWEB_TOKEN }}
-```
 
 ## Troubleshooting
 

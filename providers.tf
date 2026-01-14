@@ -1,17 +1,8 @@
 # providers.tf
+# Provider для CloudFlare
 provider "cloudflare" {
-  api_token = var.cloudflare_api_token
-}
-
-# Или если используете API ключ:
-provider "cloudflare" {
-  api_key    = var.cloudflare_api_key
-  email      = var.cloudflare_email
-}
-
-# variables.tf
-variable "cloudflare_api_token" {
-  description = "Cloudflare API Token"
-  type        = string
-  sensitive   = true
+  api_token = var.cloudflare_api_token != "" ? var.cloudflare_api_token : null
+  
+  # Указываем, что этот провайдер использует тот же источник, что и в required_providers
+  # В данном случае, alias не требуется, но мы можем попробовать добавить его для ясности
 }

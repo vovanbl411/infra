@@ -5,7 +5,7 @@ terraform {
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
+      version = "~> 4.40.0"
     }
   }
   required_version = ">= 0.13"
@@ -14,11 +14,6 @@ terraform {
 # Provider для Timeweb Cloud
 provider "twc" {
   token = file("token.txt")
-}
-
-# Provider для CloudFlare
-provider "cloudflare" {
-  api_token = var.cloudflare_api_token != "" ? var.cloudflare_api_token : null
 }
 
 data "twc_configurator" "configurator" {
