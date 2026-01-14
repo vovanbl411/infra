@@ -39,16 +39,17 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: "auto"
+        AWS_ENDPOINT_URL_S3: "https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
       run: |
         terraform init \
-          -backend-config="bucket=${{ env.TF_BACKEND_BUCKET }}" \
-          -backend-config="key=${{ env.TF_STATE_KEY }}" \
-          -backend-config="endpoint=${{ env.AWS_ENDPOINT_URL_S3 }}" \
+          -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
+          -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+          -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
           -backend-config="skip_credentials_validation=true" \
           -backend-config="skip_region_validation=true" \
           -backend-config="skip_metadata_api_check=true" \
-          -backend-config="force_path_style=true" \
-          -reconfigure
+          -backend-config="use_path_style=true" \
+          -backend-config="skip_requesting_account_id=true"
     
     - name: Terraform Format
       run: terraform fmt -check -recursive
