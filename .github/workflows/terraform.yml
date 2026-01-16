@@ -26,7 +26,7 @@ jobs:
         terraform init \
           -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
           -backend-config="key=kubernetes-cluster/terraform.tfstate" \
-          -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+          -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.eu.r2.cloudflarestorage.com" \
           -backend-config="skip_credentials_validation=true" \
           -backend-config="skip_region_validation=true" \
           -backend-config="skip_metadata_api_check=true" \
