@@ -13,7 +13,7 @@ variable "cluster_name" {
 variable "k8s_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "v1.32.3"
+  default     = "v1.31.6"
 }
 
 # Параметры master_cpu, master_ram, master_disk, worker_cpu, worker_ram, worker_disk
