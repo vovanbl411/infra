@@ -7,7 +7,7 @@ terraform {
     skip_metadata_api_check     = true
     use_path_style              = true
     skip_requesting_account_id  = true
-    region                      = "auto"
+    region                      = "us-east-1"
     # endpoint будут заданы в workflow
   }
 }
