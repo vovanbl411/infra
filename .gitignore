@@ -9,9 +9,7 @@ terraform.tfstate.backup
 .terraform.lock.hcl
 
 # Локальные конфигурации
-backend.local.tf
 r2-backend.conf
-backend.conf
 *.local.tfvars
 .envrc
-.terraformrc
+backend.local.conf
