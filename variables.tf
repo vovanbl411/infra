@@ -67,7 +67,7 @@ variable "worker_count" {
 variable "location" {
   description = "Location for resources"
   type        = string
-  default     = "ru-1"
+  default     = "nsk-1"
 }
 
 variable "vpc_subnet" {
