@@ -48,7 +48,7 @@ resource "twc_k8s_node_group" "worker_nodes" {
 
 # Публичный IP для доступа к кластеру
 resource "twc_floating_ip" "cluster_api_ip" {
-  availability_zone = var.location
+  availability_zone = var.availability_zone
 }
 
 # CloudFlare DNS записи

@@ -70,11 +70,11 @@ variable "location" {
   default     = "ru-1"
 }
 
-# variable "floating_ip_zone" {
-#   description = "Zone for floating IP (возможные значения: ru-1, ru-2, pl-1)"
-#   type        = string
-#   default     = "ru-1"  # Измените согласно документации Timeweb
-# }
+variable "availability_zone" {
+  description = "Availability zone for servers and floating IPs"
+  type        = string
+  default     = "spb-3"
+}
 
 variable "vpc_subnet" {
   description = "VPC subnet in CIDR notation"
