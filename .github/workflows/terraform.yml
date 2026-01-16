@@ -27,6 +27,8 @@ jobs:
           -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
           -backend-config="key=kubernetes-cluster/terraform.tfstate" \
           -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+          -backend-config="access_key=${{ secrets.R2_ACCESS_KEY_ID }}" \
+          -backend-config="secret_key=${{ secrets.R2_SECRET_ACCESS_KEY }}" \
           -backend-config="skip_credentials_validation=true" \
           -backend-config="skip_region_validation=true" \
           -backend-config="skip_metadata_api_check=true" \
