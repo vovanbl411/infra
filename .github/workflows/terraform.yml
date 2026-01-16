@@ -50,16 +50,16 @@ jobs:
         TF_VAR_cluster_name: "my-k8s-cluster"
       run: terraform plan
         
-    # - name: Terraform Apply
-    #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    #   env:
-    #     AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-    #     AWS_DEFAULT_REGION: "auto"
-    #     AWS_ENDPOINT_URL_S3: "https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
-    #     TF_VAR_timeweb_token: ${{ secrets.TIMEWEB_TOKEN }}
-    #     TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    #     TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    #     TF_VAR_domain_name: "vovanbl411.qzz.io"
-    #     TF_VAR_cluster_name: "my-k8s-cluster"
-    #   run: terraform apply -auto-approve
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: "auto"
+        AWS_ENDPOINT_URL_S3: "https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
+        TF_VAR_timeweb_token: ${{ secrets.TIMEWEB_TOKEN }}
+        TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        TF_VAR_domain_name: "vovanbl411.qzz.io"
+        TF_VAR_cluster_name: "my-k8s-cluster"
+      run: terraform apply -auto-approve
