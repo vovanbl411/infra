@@ -13,7 +13,7 @@ variable "cluster_name" {
 variable "k8s_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "v1.34.2"
+  default     = "v1.34.3"
 }
 
 # Параметры master_cpu, master_ram, master_disk, worker_cpu, worker_ram, worker_disk
@@ -67,7 +67,13 @@ variable "worker_count" {
 variable "location" {
   description = "Location for resources"
   type        = string
-  default     = "ru-3"
+  default     = "ru-1"
+}
+
+variable "floating_ip_zone" {
+  description = "Zone for floating IP (возможные значения: ru-1, ru-2, pl-1)"
+  type        = string
+  default     = "ru-1"  # Измените согласно документации Timeweb
 }
 
 variable "vpc_subnet" {

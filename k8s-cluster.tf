@@ -29,6 +29,10 @@ data "twc_k8s_preset" "worker_preset" {
   type = "worker"
 }
 
+# resource "twc_floating_ip" "cluster_api_ip" {
+#   availability_zone = var.floating_ip_zone  # Используйте отдельную переменную
+# }
+
 resource "twc_k8s_node_group" "worker_nodes" {
   cluster_id = twc_k8s_cluster.k8s_cluster.id
   name       = "worker-nodes"
