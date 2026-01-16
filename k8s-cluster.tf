@@ -16,7 +16,7 @@ resource "twc_k8s_cluster" "k8s_cluster" {
   description = "Kubernetes cluster with 1 master and ${var.worker_count} workers"
 
   high_availability = false
-  version           = var.k8s_version
+  version           = "v1.31.6"
   network_driver    = "flannel"
   ingress           = true
 
