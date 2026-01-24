@@ -79,7 +79,7 @@ variable "availability_zone" {
 variable "vpc_subnet" {
   description = "VPC subnet in CIDR notation"
   type        = string
-  default     = "10.100.0.0/16"
+  default     = "192.168.0.0/16"
 }
 
 # Переменные для CloudFlare (для локального тестирования)
