@@ -79,6 +79,18 @@ output "cluster_status" {
   description = "Status of the Kubernetes cluster"
 }
 
+# Генерация Inventory файла для Ansible
+resource "local_file" "ansible_inventory" {
+  content = <<EOT
+[all:vars]
+cluster_id=${twc_k8s_cluster.k8s_cluster.id}
+cluster_name=${twc_k8s_cluster.k8s_cluster.name}
+location=${var.location}
 
+[master]
+${twc_k8s_cluster.k8s_cluster.name} ansible_host=${twc_k8s_cluster.k8s_cluster.endpoint}
+EOT
+  filename = "${path.module}/inventory.ini"
+}
 
 
