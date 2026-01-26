@@ -79,18 +79,23 @@ output "cluster_status" {
   description = "Status of the Kubernetes cluster"
 }
 
+output "raw_cluster_data" {
+  value = twc_k8s_cluster.k8s_cluster
+  sensitive = true # На всякий случай, если там есть токены
+}
+
 # Генерация Inventory файла для Ansible
 resource "local_file" "ansible_inventory" {
   content = <<EOT
 [all:vars]
 cluster_id=${twc_k8s_cluster.k8s_cluster.id}
 cluster_name=${twc_k8s_cluster.k8s_cluster.name}
-location=${var.location}
 
 [master]
-${twc_k8s_cluster.k8s_cluster.name} ansible_host=${twc_k8s_cluster.k8s_cluster.endpoint}
+# Если Timeweb не отдает IP напрямую, используем имя, 
+# но для Ansible лучше всего подходит IP управления.
+${twc_k8s_cluster.k8s_cluster.name}
 EOT
   filename = "${path.module}/inventory.ini"
 }
-
 
