@@ -18,7 +18,7 @@ resource "twc_k8s_cluster" "k8s_cluster" {
   high_availability = false
   version           = var.k8s_version
   network_driver    = "flannel"
-  ingress           = true
+  ingress           = false
 
   preset_id  = data.twc_k8s_preset.master_preset.id
   network_id = twc_vpc.k8s_vpc.id
@@ -28,10 +28,6 @@ resource "twc_k8s_cluster" "k8s_cluster" {
 data "twc_k8s_preset" "worker_preset" {
   type = "worker"
 }
-
-# resource "twc_floating_ip" "cluster_api_ip" {
-#   availability_zone = var.floating_ip_zone  # Используйте отдельную переменную
-# }
 
 resource "twc_k8s_node_group" "worker_nodes" {
   cluster_id = twc_k8s_cluster.k8s_cluster.id
@@ -46,31 +42,26 @@ resource "twc_k8s_node_group" "worker_nodes" {
   # max_size = 5
 }
 
-# Публичный IP для доступа к кластеру
-resource "twc_floating_ip" "cluster_api_ip" {
-  availability_zone = var.availability_zone
-}
-
 # CloudFlare DNS записи
 data "cloudflare_zone" "domain" {
   name = var.domain_name
 }
 
-resource "cloudflare_record" "k8s_api" {
-  zone_id = data.cloudflare_zone.domain.id
-  name    = "k8s-api"
-  value   = twc_floating_ip.cluster_api_ip.ip
-  type    = "A"
-  ttl     = 300
-}
+# resource "cloudflare_record" "k8s_api" {
+#   zone_id = data.cloudflare_zone.domain.id
+#   name    = "k8s-api"
+#   value   = twc_floating_ip.cluster_api_ip.ip
+#   type    = "A"
+#   ttl     = 300
+# }
 
-resource "cloudflare_record" "apps_wildcard" {
-  zone_id = data.cloudflare_zone.domain.id
-  name    = "*.apps"
-  value   = twc_floating_ip.cluster_api_ip.ip
-  type    = "A"
-  ttl     = 300
-}
+# resource "cloudflare_record" "apps_wildcard" {
+#   zone_id = data.cloudflare_zone.domain.id
+#   name    = "*.apps"
+#   value   = twc_floating_ip.cluster_api_ip.ip
+#   type    = "A"
+#   ttl     = 300
+# }
 
 # Вывод информации о кластере
 output "cluster_id" {
@@ -88,23 +79,6 @@ output "cluster_status" {
   description = "Status of the Kubernetes cluster"
 }
 
-output "kubeconfig" {
-  value       = twc_k8s_cluster.k8s_cluster.kubeconfig
-  sensitive   = true
-  description = "Kubeconfig for the cluster"
-}
 
-output "floating_ip" {
-  value       = twc_floating_ip.cluster_api_ip.ip
-  description = "Floating IP for accessing the cluster"
-}
 
-output "api_endpoint" {
-  value       = "https://k8s-api.${var.domain_name}"
-  description = "Kubernetes API endpoint"
-}
 
-output "apps_domain" {
-  value       = "*.apps.${var.domain_name}"
-  description = "Wildcard domain for applications"
-}

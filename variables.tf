@@ -16,48 +16,6 @@ variable "k8s_version" {
   default     = "v1.34.3+k0s.0"
 }
 
-# Параметры master_cpu, master_ram, master_disk, worker_cpu, worker_ram, worker_disk
-# больше не используются для Kubernetes пресетов, так как приводили к ошибке
-# "no Presets with provided properties found". Вместо этого используются
-# доступные пресеты типа "master" и "worker" без дополнительных фильтров.
-
-# Эти переменные можно использовать для других ресурсов, если понадобится
-variable "master_cpu" {
-  description = "CPU count for master node (не используется для k8s пресетов)"
-  type        = number
-  default     = 1
-}
-
-variable "master_ram" {
-  description = "RAM size for master node in MB (не используется для k8s пресетов)"
-  type        = number
-  default     = 2048
-}
-
-variable "master_disk" {
-  description = "Disk size for master node in MB (не используется для k8s пресетов)"
-  type        = number
-  default     = 30000
-}
-
-variable "worker_cpu" {
-  description = "CPU count for worker nodes (не используется для k8s пресетов)"
-  type        = number
-  default     = 1
-}
-
-variable "worker_ram" {
-  description = "RAM size for worker nodes in MB (не используется для k8s пресетов)"
-  type        = number
-  default     = 2048
-}
-
-variable "worker_disk" {
-  description = "Disk size for worker nodes in MB (не используется для k8s пресетов)"
-  type        = number
-  default     = 30000
-}
-
 variable "worker_count" {
   description = "Number of worker nodes"
   type        = number
