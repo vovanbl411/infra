@@ -21,28 +21,21 @@
 ```
 .
 ├── .github/workflows/          # GitHub Actions workflow
-│   └── terraform.yml
+│   ├── terraform-apply.yml     # Workflow для деплоя
+│   └── terraform-destroy.yml   # Workflow для удаления инфраструктуры
 ├── backend.tf                  # Конфигурация удаленного бэкенда
 ├── k8s-cluster.tf             # Ресурсы Kubernetes кластера
 ├── main.tf                    # Основная конфигурация Terraform
 ├── variables.tf               # Переменные Terraform
-├── validate-config.sh         # Скрипт валидации конфигурации
-├── install-ingress.sh         # Скрипт установки ingress контроллера
-├── test-app.yaml              # Тестовое приложение для деплоя
-├── TESTING_WORKFLOW.md        # Документация по тестированию workflow
-├── README.md                  # Эта документация
 ├── .gitignore                 # Игнорируемые файлы
-├── r2-backend.conf            # Конфигурация R2 бэкенда (пример)
-└── new-README.md              # Временный файл с шаблоном README
+└── README.md                  # Эта документация
 ```
 
 ## Архитектура кластера
 
 - **1 мастер-нода**: Используется первый доступный пресет типа "master"
 - **2 воркер-ноды**: Используется первый доступный пресет типа "worker"
-- **VPC сеть**: 10.100.0.0/16 для изоляции
-- **Floating IP**: Для внешнего доступа к API кластера
-- **CloudFlare интеграция**: Автоматическое создание DNS-записей
+- **VPC сеть**: 192.168.0.0/16 для изоляции
 - **R2 хранилище**: S3-совместимое хранилище CloudFlare для хранения tfstate
 
 ## 🚀 Быстрый старт
@@ -94,6 +87,7 @@ worker_count = 2
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID Cloudflare |
 | `R2_ACCESS_KEY_ID` | Access Key для R2 |
 | `R2_SECRET_ACCESS_KEY` | Secret Key для R2 |
+| `AWS_ENDPOINT_URL_S3` | Endpoint URL для R2 |
 
 ### Cloudflare R2 Bucket
 
@@ -163,20 +157,21 @@ echo "cloudflare.auto.tfvars" >> .gitignore
 
 #### Настройка локальной конфигурации
 
-Создайте файл `r2-backend.conf` для передачи учетных данных при инициализации Terraform:
+Конфигурация R2 бэкенда находится в файле `backend.tf`:
 
-```
-# Конфигурация R2 бэкенда (учетные данные передаются через переменные окружения)
-bucket = "terraform-state"
-key = "kubernetes-cluster/terraform.tfstate"
-region = "auto"
-
-skip_credentials_validation = true
-skip_region_validation      = true
-skip_metadata_api_check     = true
-use_path_style              = true
-
-endpoint = { s3 ="https://3c0b9323abd28c04275c43d1be673fb5.r2.cloudflarestorage.com" }
+```hcl
+terraform {
+  backend "s3" {
+    bucket                      = "terraform-state"
+    key                         = "kubernetes-cluster/terraform.tfstate"
+    skip_credentials_validation = true
+    skip_region_validation      = true
+    skip_metadata_api_check     = true
+    use_path_style              = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+  }
+}
 ```
 
 ## 📊 Переменные Terraform
@@ -186,10 +181,11 @@ endpoint = { s3 ="https://3c0b9323abd28c04275c43d1be673fb5.r2.cloudflarestorage.
 | Переменная | По умолчанию | Описание |
 |------------|--------------|----------|
 | `cluster_name` | `"my-k8s-cluster"` | Имя Kubernetes кластера |
-| `k8s_version` | `"v1.34.2"` | Версия Kubernetes |
+| `k8s_version` | `"v1.34.3+k0s.0"` | Версия Kubernetes |
 | `worker_count` | `2` | Количество worker-нод |
 | `location` | `"ru-1"` | Локация дата-центра |
-| `vpc_subnet` | `"10.100.0.0/16"` | CIDR подсети VPC |
+| `availability_zone` | `"spb-3"` | Зона доступности серверов и Floating IP |
+| `vpc_subnet` | `"192.168.0.0/16"` | CIDR подсети VPC |
 | `domain_name` | `"vovanbl411.qzz.io"` | Ваш домен |
 | `timeweb_token` | `""` | API токен Timeweb Cloud |
 | `cloudflare_api_token` | `""` | API токен CloudFlare |
@@ -213,6 +209,16 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    # Общие переменные для всех шагов
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "auto"
+      TF_VAR_timeweb_token: ${{ secrets.TIMEWEB_TOKEN }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      R2_ENDPOINT: ${{ secrets.AWS_ENDPOINT_URL_S3 }}
+
     steps:
     - uses: actions/checkout@v4
     
@@ -222,16 +228,13 @@ jobs:
         terraform_version: 1.12.1
         
     - name: Terraform Init
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: "auto"
-        AWS_ENDPOINT_URL_S3: "https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
       run: |
         terraform init \
           -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
           -backend-config="key=kubernetes-cluster/terraform.tfstate" \
-          -backend-config="endpoint=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+          -backend-config="endpoint=${{ env.R2_ENDPOINT }}" \
+          -backend-config="access_key=${{ env.AWS_ACCESS_KEY_ID }}" \
+          -backend-config="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
           -backend-config="skip_credentials_validation=true" \
           -backend-config="skip_region_validation=true" \
           -backend-config="skip_metadata_api_check=true" \
@@ -243,17 +246,66 @@ jobs:
       run: terraform validate
       
     - name: Terraform Plan
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: "auto"
-        AWS_ENDPOINT_URL_S3: "https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
-        TF_VAR_timeweb_token: ${{ secrets.TIMEWEB_TOKEN }}
-        TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        TF_VAR_domain_name: "vovanbl411.qzz.io" # или используйте переменные GitHub
-        TF_VAR_cluster_name: "my-k8s-cluster"
       run: terraform plan
+        
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve
+
+    - name: Upload Inventory
+      uses: actions/upload-artifact@v4
+      with:
+        name: ansible-inventory
+        path: inventory.ini
+```
+
+### Удаление инфраструктуры
+
+Для удаления инфраструктуры можно использовать workflow `terraform-destroy.yml`, который запускается вручную:
+
+```yaml
+name: Terraform Destroy
+
+on:
+  workflow_dispatch: # Позволяет запустить удаление вручную кнопкой в интерфейсе
+
+jobs:
+  terraform-destroy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "auto"
+      TF_VAR_timeweb_token: ${{ secrets.TIMEWEB_TOKEN }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      R2_ENDPOINT: ${{ secrets.AWS_ENDPOINT_URL_S3 }}
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.12.1
+        
+    - name: Terraform Init
+      run: |
+        terraform init \
+          -backend-config="bucket=${{ vars.R2_BUCKET || 'terraform-state' }}" \
+          -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+          -backend-config="endpoint=${{ env.R2_ENDPOINT }}" \
+          -backend-config="access_key=${{ env.AWS_ACCESS_KEY_ID }}" \
+          -backend-config="secret_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
+          -backend-config="skip_credentials_validation=true" \
+          -backend-config="skip_region_validation=true" \
+          -backend-config="skip_metadata_api_check=true" \
+          -backend-config="use_path_style=true" \
+          -backend-config="skip_requesting_account_id=true" \
+          -reconfigure
+    
+    - name: Terraform Destroy
+      run: terraform destroy -auto-approve
 ```
 
 ### Локальная разработка
@@ -277,8 +329,16 @@ export AWS_REGION="auto"
 
 # Инициализируйте с конфигурацией R2
 terraform init -reconfigure \
-  -backend-config=r2-backend.conf \
-  -backend-config="endpoint=https://ваш_account_id.r2.cloudflarestorage.com"
+  -backend-config="bucket=terraform-state" \
+  -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+  -backend-config="endpoint=https://ваш_account_id.r2.cloudflarestorage.com" \
+  -backend-config="access_key=$AWS_ACCESS_KEY_ID" \
+  -backend-config="secret_key=$AWS_SECRET_ACCESS_KEY" \
+  -backend-config="skip_credentials_validation=true" \
+  -backend-config="skip_region_validation=true" \
+  -backend-config="skip_metadata_api_check=true" \
+  -backend-config="use_path_style=true" \
+  -backend-config="skip_requesting_account_id=true"
 ```
 
 ## 🛠️ Полезные команды
@@ -290,8 +350,6 @@ terraform fmt -recursive
 # Валидация конфигурации
 terraform validate
 
-# Проверка конфигурации перед коммитом
-./validate-config.sh
 
 # План с локальными переменными
 terraform plan -var-file=secrets.tfvars
@@ -316,10 +374,7 @@ terraform init -upgrade
 1. **VPC** для изоляции сети кластера
 2. **Kubernetes кластер** с master-нодой
 3. **Worker node group** с заданным количеством нод
-4. **Floating IP** для доступа к API кластера
-5. **DNS записи** в Cloudflare:
-   - `k8s-api.ваш-домен` → API Kubernetes
-   - `*.apps.ваш-домен` → ingress контроллер
+4. **Inventory файл** для Ansible (локально)
 
 ## Развертывание кластера
 
@@ -335,7 +390,17 @@ export AWS_DEFAULT_REGION="auto"
 export AWS_ENDPOINT_URL_S3="https://ваш_account_id.r2.cloudflarestorage.com"
 
 # Инициализируйте Terraform с конфигурацией R2 бэкенда
-terraform init -backend-config=r2-backend.conf
+terraform init -reconfigure \
+  -backend-config="bucket=terraform-state" \
+  -backend-config="key=kubernetes-cluster/terraform.tfstate" \
+  -backend-config="endpoint=$AWS_ENDPOINT_URL_S3" \
+  -backend-config="access_key=$AWS_ACCESS_KEY_ID" \
+  -backend-config="secret_key=$AWS_SECRET_ACCESS_KEY" \
+  -backend-config="skip_credentials_validation=true" \
+  -backend-config="skip_region_validation=true" \
+  -backend-config="skip_metadata_api_check=true" \
+  -backend-config="use_path_style=true" \
+  -backend-config="skip_requesting_account_id=true"
 ```
 
 ### 2. Проверка плана
@@ -354,17 +419,18 @@ terraform apply
 - VPC сеть
 - Kubernetes кластер с мастер-нодой
 - Группу воркер-нод (2 ноды)
-- Floating IP адрес
-- DNS-записи в CloudFlare
 - Состояние будет сохранено в R2
+- Инвентарь Ansible будет создан локально
 
 ### 4. Получение kubeconfig
 
 После успешного применения получите kubeconfig:
 
 ```bash
-terraform output kubeconfig > kubeconfig.yaml
+terraform output -raw raw_cluster_data.kubeconfig > kubeconfig.yaml
 ```
+
+Или воспользуйтесь официальным клиентом Timeweb Cloud для получения kubeconfig.
 
 ### 5. Настройка kubectl
 
@@ -382,122 +448,8 @@ kubectl get pods -A
 
 ## DNS Настройка
 
-После развертывания будут созданы следующие DNS-записи в CloudFlare:
+DNS-записи не создаются автоматически в текущей конфигурации, так как соответствующие ресурсы в k8s-cluster.tf закомментированы.
 
-- `k8s-api.vovanbl411.qzz.io` → Floating IP кластера (для доступа к Kubernetes API)
-- `*.apps.vovanbl411.qzz.io` → Floating IP кластера (для приложений)
-
-## Установка Ingress Controller
-
-Для маршрутизации внешнего трафика установите NGINX Ingress Controller:
-
-### Вариант 1: Использование скрипта (рекомендуется)
-
-```bash
-chmod +x install-ingress.sh
-# Отредактируйте install-ingress.sh и замените YOUR_FLOATING_IP на ваш floating IP
-./install-ingress.sh
-```
-
-### Вариант 2: Ручная установка
-
-```bash
-# Добавление репозитория Helm
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-
-# Установка с вашим floating IP
-FLOATING_IP=$(terraform output floating_ip)
-helm install nginx-ingress ingress-nginx/ingress-nginx \
-    --namespace ingress-nginx \
-    --create-namespace \
-    --set controller.service.externalIPs={$FLOATING_IP} \
-    --wait
-```
-
-Проверьте установку:
-
-```bash
-kubectl get pods -n ingress-nginx
-kubectl get svc -n ingress-nginx
-```
-
-## Развертывание тестового приложения
-
-Создайте файл `test-app.yaml`:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-app
-  namespace: default
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: test-app
-  template:
-    metadata:
-      labels:
-        app: test-app
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:alpine
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "100m"
-          limits:
-            memory: "128Mi"
-            cpu: "200m"
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: test-app-service
-  namespace: default
-spec:
-  selector:
-    app: test-app
-  ports:
-    - port: 80
-      targetPort: 80
-      protocol: TCP
-  type: ClusterIP
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: test-app-ingress
-  namespace: default
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: test.apps.your-domain.com  # Замените на ваш домен
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: test-app-service
-            port:
-              number: 80
-```
-
-Примените:
-
-```bash
-kubectl apply -f test-app.yaml
-```
 
 ## SSL-сертификаты
 
@@ -558,7 +510,7 @@ terraform apply
 variable "k8s_version" {
   description = "Kubernetes version"
  type        = string
- default     = "v1.34.2"  # Новая версия
+ default     = "v1.34.3+k0s.0"  # Новая версия
 }
 ```
 
@@ -602,12 +554,6 @@ terraform {
 
 4. Снова выполните `terraform init` и подтвердите миграцию состояния
 
-### Использование файла конфигурации бэкенда
-
-Для локального тестирования можно использовать файл `r2-backend.conf` с командой:
-```bash
-terraform init -backend-config=r2-backend.conf
-```
 
 Убедитесь, что перед запуском команды заданы переменные окружения AWS_ACCESS_KEY_ID и AWS_SECRET_ACCESS_KEY с вашими учетными данными R2.
 
@@ -641,7 +587,7 @@ terraform state pull > terraform.tfstate.backup
 ### Доступ к Kubernetes кластеру
 ```bash
 # Получить kubeconfig
-terraform output -raw kubeconfig > kubeconfig.yaml
+terraform output -raw raw_cluster_data.kubeconfig > kubeconfig.yaml
 
 # Использовать с kubectl
 kubectl --kubeconfig kubeconfig.yaml get nodes
@@ -711,8 +657,6 @@ k8s_version = "v1.35.0"  # Новая версия
 2. Убедитесь, что bucket существует и доступен
 3. Проверьте права доступа к bucket
 
-### Ошибка: "Duplicate provider configuration"
-**Решение:** Удалите файл `providers.tf`, провайдеры уже определены в `main.tf`
 
 ### Ошибка: "Missing region value"
 **Решение:** Установите переменную окружения:
@@ -734,7 +678,6 @@ terraform init -migrate-state
 Примерная стоимость в месяц (на основе тарифов Timeweb Cloud):
 - Мастер-нода: Зависит от выбранного пресета (первый доступный пресет типа "master")
 - 2 воркер-ноды: Зависит от выбранного пресета (первый доступный пресет типа "worker")
-- Floating IP: ~50 руб/месяц
 - R2 Storage: Зависит от объема хранения и трафика (см. тарифы CloudFlare R2)
 - Общий трафик: зависит от использования
 
@@ -787,13 +730,4 @@ terraform init -migrate-state
 
 1. Убедитесь, что у вас установлен Terraform
 2. Настройте учетные данные для доступа к R2 и другим провайдерам
-3. Используйте файл `r2-backend.conf` для локальной инициализации
-4. Для тестирования GitHub Actions workflow локально используйте инструмент `act` (см. файл `TESTING_WORKFLOW.md`)
-
-## Вспомогательные скрипты
-
-Проект включает несколько полезных скриптов:
-
-- `validate-config.sh` - скрипт для проверки конфигурации перед коммитом
-- `install-ingress.sh` - скрипт для установки ingress контроллера
-- `TESTING_WORKFLOW.md` - документация по тестированию workflow
+3. Для тестирования GitHub Actions workflow локально используйте инструмент `act`
