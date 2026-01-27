@@ -12,7 +12,7 @@
 │   Repository    │────▶│   R2 + DNS      │────▶│   Kubernetes    │
 │                 │     │                 │     │   Cluster       │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
-       │                                                │
+       │                                               │
        └───── CI/CD Pipeline (GitHub Actions) ─────────┘
 ```
 

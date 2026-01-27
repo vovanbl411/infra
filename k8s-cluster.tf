@@ -19,6 +19,7 @@ resource "twc_k8s_cluster" "k8s_cluster" {
   version           = var.k8s_version
   network_driver    = "flannel"
   ingress           = false
+  # helm              = true ??
 
   preset_id  = data.twc_k8s_preset.master_preset.id
   network_id = twc_vpc.k8s_vpc.id
