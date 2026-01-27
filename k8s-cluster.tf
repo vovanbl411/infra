@@ -47,22 +47,6 @@ data "cloudflare_zone" "domain" {
   name = var.domain_name
 }
 
-# resource "cloudflare_record" "k8s_api" {
-#   zone_id = data.cloudflare_zone.domain.id
-#   name    = "k8s-api"
-#   value   = twc_floating_ip.cluster_api_ip.ip
-#   type    = "A"
-#   ttl     = 300
-# }
-
-# resource "cloudflare_record" "apps_wildcard" {
-#   zone_id = data.cloudflare_zone.domain.id
-#   name    = "*.apps"
-#   value   = twc_floating_ip.cluster_api_ip.ip
-#   type    = "A"
-#   ttl     = 300
-# }
-
 # Вывод информации о кластере
 output "cluster_id" {
   value       = twc_k8s_cluster.k8s_cluster.id
