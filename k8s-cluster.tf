@@ -70,17 +70,17 @@ output "raw_cluster_data" {
 }
 
 # Генерация Inventory файла для Ansible
-resource "local_file" "ansible_inventory" {
-  content = <<EOT
-[all:vars]
-cluster_id=${twc_k8s_cluster.k8s_cluster.id}
-cluster_name=${twc_k8s_cluster.k8s_cluster.name}
+# resource "local_file" "ansible_inventory" {
+#   content = <<EOT
+# [all:vars]
+# cluster_id=${twc_k8s_cluster.k8s_cluster.id}
+# cluster_name=${twc_k8s_cluster.k8s_cluster.name}
 
-[master]
-# Если Timeweb не отдает IP напрямую, используем имя, 
-# но для Ansible лучше всего подходит IP управления.
-${twc_k8s_cluster.k8s_cluster.name}
-EOT
-  filename = "${path.module}/inventory.ini"
-}
+# [master]
+# # Если Timeweb не отдает IP напрямую, используем имя, 
+# # но для Ansible лучше всего подходит IP управления.
+# ${twc_k8s_cluster.k8s_cluster.name}
+# EOT
+#   filename = "${path.module}/inventory.ini"
+# }
 

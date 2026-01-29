@@ -53,8 +53,8 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform apply -auto-approve
 
-    - name: Upload Inventory
-      uses: actions/upload-artifact@v4
-      with:
-        name: ansible-inventory
-        path: inventory.ini
+    # - name: Upload Inventory
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: ansible-inventory
+    #     path: inventory.ini
